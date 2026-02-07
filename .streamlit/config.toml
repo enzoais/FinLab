@@ -1,0 +1,3 @@
+# Reload app when a Python file is saved (see changes without restarting Streamlit)
+[server]
+runOnSave = true

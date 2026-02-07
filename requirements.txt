@@ -1,0 +1,19 @@
+# FinLab — dependencies
+# Framework
+streamlit>=1.28.0
+
+# Data
+yfinance>=0.2.36
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Visualization
+plotly>=5.18.0
+matplotlib>=3.7.0
+
+# Calculations & Optimization
+scipy>=1.11.0
+statsmodels>=0.14.0
+
+# Dev: file watching so Streamlit reruns when pages/services change
+watchdog>=4.0.0
