@@ -1,6 +1,10 @@
 # FinLab
 
-**FinLab** is a personal quantitative finance dashboard built with Streamlit. It brings together five classic tools in a single web app: CAPM/Beta, Markowitz portfolio optimization, bond pricing, Black–Scholes option pricing, and Monte Carlo wealth simulation.
+**FinLab** is a personal quantitative finance dashboard built with Streamlit.
+
+**Live app:** [https://final-dash.streamlit.app](https://final-dash.streamlit.app) · **Repo:** [github.com/enzoais/FinLab](https://github.com/enzoais/FinLab)
+
+It brings together five classic tools in a single web app: CAPM/Beta, Markowitz portfolio optimization, bond pricing, Black–Scholes option pricing, and Monte Carlo wealth simulation.
 
 ---
 
@@ -52,7 +56,7 @@ Data is loaded from **Yahoo Finance** where needed; the rest is configurable via
 
 ```bash
 # Clone the repo (or use your local folder)
-git clone https://github.com/YOUR_USERNAME/FinLab.git
+git clone https://github.com/enzoais/FinLab.git
 cd FinLab
 
 # Create a virtual environment (optional but recommended)
@@ -66,7 +70,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Then open the URL shown in the terminal (usually `http://localhost:8501`).
+Then open the URL shown in the terminal (usually `http://localhost:8501`). Or use the [deployed app](https://final-dash.streamlit.app) directly.
 
 ### Dev mode (auto-reload)
 
