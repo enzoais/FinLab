@@ -11,9 +11,10 @@ Contexte : entretien quant le lendemain. FinLab est sur le CV comme
    nulle part dans le code aujourd'hui (pricing/optimisation/simulation, mais aucune
    stratégie rejouée sur l'historique). → Ajouter un onglet Backtest réel.
 2. **Démo live** — design **clair & pro**, écran épuré, zéro stack trace en public.
-3. **Révision** — chaque terme/métrique a une **bulle `?`** l'expliquant simplement
-   (c'est quoi / à quoi ça sert / comment le lire, sans équations) + un onglet
-   **📖 Glossaire** listant tout.
+3. **Révision** — à côté de **chaque chiffre / notion complexe**, un petit **bouton `ⓘ`
+   cliquable** (`st.popover`) ouvre un panneau expliquant simplement : c'est quoi, à quoi
+   ça sert, comment ça se calcule (sans équations). **Pas de page séparée** :
+   l'explication est au contact direct de la donnée. Couvrir **toutes** les notions.
 
 ## Décisions validées
 
@@ -23,7 +24,8 @@ Contexte : entretien quant le lendemain. FinLab est sur le CV comme
 - **Style** : **clair & pro** (fond clair, accent sobre, beaucoup d'espace).
 - **Nettoyage** : **couper franchement** — on retire les métriques trop techniques
   non défendables à l'oral (t-stats, p-values, IC, condition number, nuage aléatoire…).
-- **Glossaire** : via `help=` sur chaque métrique + onglet dédié.
+- **Glossaire** : bouton `ⓘ` cliquable (`st.popover`) à côté de chaque chiffre/notion,
+  ouvrant un panneau d'explication au clic. **Pas de page/onglet dédié.**
 
 ## Architecture
 
@@ -31,12 +33,14 @@ Principe conservé : `services/` = logique pure (sans Streamlit, testée pytest)
 `sections/` = UI, `utils/` = partagé. On ajoute :
 
 - `services/backtest_service.py` — nouveau moteur de backtest (pur, testé).
-- `utils/glossary.py` — `GLOSSARY: dict[str, str]` (terme → explication simple, FR).
-- `utils/ui.py` — helpers UI : `kpi_row(...)` (cartes `st.metric` + bulle `help`),
-  en-têtes homogènes, expander « Avancé ».
+- `utils/glossary.py` — `GLOSSARY: dict[str, str]` (terme → explication simple, FR),
+  **exhaustif** (toutes les notions de l'app).
+- `utils/ui.py` — helpers UI : `metric_with_info(label, value, term_key)` (une carte
+  `st.metric` + un bouton `ⓘ` `st.popover` qui ouvre le panneau d'explication au clic),
+  `kpi_row(...)`, en-têtes homogènes, expander « Avancé ».
 - `utils/plot_config.py` — un `apply_theme(fig)` pour un template Plotly commun.
 - `.streamlit/config.toml` — section `[theme]` claire & pro.
-- `sections/backtest.py` + `sections/glossary.py` — deux nouveaux onglets.
+- `sections/backtest.py` — nouvel onglet Backtest.
 
 ## Onglet Backtest (nouveau)
 
@@ -60,7 +64,6 @@ Principe conservé : `services/` = logique pure (sans Streamlit, testée pytest)
 | **Options** | call/put, les 5 Greeks, IV ; 1 graphe de sensibilité | put-call parity, table de scénarios détaillée |
 | **Simulation** | fan chart ; stats terminales (p5/p50/p95, moyenne) ; VaR/CVaR ; max drawdown ; proba shortfall | détails de percentiles superflus |
 | **Backtest** | courbe de capital vs benchmark ; drawdown ; total return, CAGR, Sharpe, max DD, VaR/CVaR | — |
-| **📖 Glossaire** | liste complète des termes expliqués simplement | — |
 
 Rien n'est supprimé des `services/` : on ne retire que de l'**affichage**. Les tests
 services restent verts.
@@ -73,6 +76,8 @@ services restent verts.
   homogènes (déjà dans `config.py`).
 - Grammaire par onglet : **3-4 KPI en tête** → **1 graphe héros** → **expander
   « Avancé »** pour le reste.
+- Chaque KPI/notion porte son bouton **`ⓘ`** (`st.popover`) ouvrant l'explication
+  pédagogique au clic (glossaire au contact de la donnée, pas de page dédiée).
 
 ## Gestion d'erreurs (démo live)
 
@@ -89,11 +94,10 @@ services restent verts.
 
 ## Priorité d'exécution (une nuit)
 
-1. Design system + thème + helpers UI.
-2. Nettoyage + glossaire des onglets existants (même passage).
-3. Onglet **Backtest** (construit directement dans le style propre).
-4. Onglet **📖 Glossaire**.
-5. Bonus si temps : recherche de tickers interactive.
+1. Design system + thème + helpers UI (dont `metric_with_info` / popover `ⓘ`).
+2. Nettoyage + glossaire (popovers `ⓘ`) des onglets existants — même passage.
+3. Onglet **Backtest** (construit directement dans le style propre, avec ses popovers).
+4. Bonus si temps : recherche de tickers interactive.
 
 Honnêteté : perfectionner les 6 onglets + backtest + glossaire en une nuit est tendu ;
 on sécurise dans cet ordre, le plus important pour l'entretien passe en premier.
