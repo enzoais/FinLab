@@ -8,7 +8,7 @@ from config import DEFAULT_MARKOWITZ_TICKERS, DEFAULT_RISK_FREE_RATE
 from services import backtest_service, capm_service, markowitz_service
 from utils.formatters import format_pct
 from utils.plot_config import apply_theme, COLOR_PRIMARY, COLOR_BENCHMARK, COLOR_NEGATIVE
-from utils.ui import kpi_row, section_header, advanced_expander, show_data_error, info_inline, metric_with_info
+from utils.ui import kpi_row, section_header, advanced_expander, show_data_error, info_inline, metric_with_info, asset_multiselect
 
 _REBALANCE_MAP = {"Aucun (buy & hold)": "none", "Mensuel": "monthly", "Trimestriel": "quarterly"}
 
@@ -43,16 +43,10 @@ def render():
     with st.expander("Paramètres", expanded=True):
         c1, c2 = st.columns(2)
         with c1:
-            default_tickers = "\n".join(DEFAULT_MARKOWITZ_TICKERS)
-            tickers_text = st.text_area("Actifs (un par ligne)", value=default_tickers, height=110, key="bt_tickers").strip() or default_tickers
-            tickers, seen = [], set()
-            for q in [t.strip() for t in tickers_text.splitlines() if t.strip()]:
-                sym = (capm_service.resolve_asset_ticker(q)[0] or q).strip().upper()
-                if sym and sym not in seen:
-                    tickers.append(sym)
-                    seen.add(sym)
-            if not tickers:
-                tickers = list(DEFAULT_MARKOWITZ_TICKERS)
+            tickers = asset_multiselect(
+                "Actifs du portefeuille", list(DEFAULT_MARKOWITZ_TICKERS), key="bt_tickers",
+                help="Cherchez par nom ou ticker (ex. tapez « app » → Apple). Au moins 2 actifs ; tout ticker peut être ajouté librement.",
+            )
             period_preset = st.selectbox("Période", ["5 ans", "3 ans", "2 ans", "1 an"], index=0, key="bt_period")
             years = {"5 ans": 5, "3 ans": 3, "2 ans": 2, "1 an": 1}[period_preset]
             end_dt = pd.Timestamp.now()
@@ -71,16 +65,18 @@ def render():
         weights = None
         if weight_mode == "Équipondéré":
             weights = None
-            st.caption(f"Chaque actif reçoit {100 / len(tickers):.1f} % du capital.")
+            if tickers:
+                st.caption(f"Chaque actif reçoit {100 / len(tickers):.1f} % du capital.")
         elif weight_mode == "Personnalisés":
-            st.markdown("**Poids personnalisés (%)** — normalisés automatiquement pour sommer à 100 %.")
-            cols = st.columns(min(len(tickers), 4))
-            raw = []
-            for i, t in enumerate(tickers):
-                with cols[i % len(cols)]:
-                    raw.append(st.number_input(t, 0.0, 100.0, round(100 / len(tickers), 1), 1.0, key=f"bt_w_{t}"))
-            weights = list(raw)
-        else:  # Markowitz
+            if tickers:
+                st.markdown("**Poids personnalisés (%)** — normalisés automatiquement pour sommer à 100 %.")
+                cols = st.columns(min(len(tickers), 4))
+                raw = []
+                for i, t in enumerate(tickers):
+                    with cols[i % len(cols)]:
+                        raw.append(st.number_input(t, 0.0, 100.0, round(100 / len(tickers), 1), 1.0, key=f"bt_w_{t}"))
+                weights = list(raw)
+        elif len(tickers) >= 2:  # Markowitz
             with st.spinner("Optimisation Markowitz (max-Sharpe)…"):
                 mk_weights = _markowitz_weights_cached(tuple(tickers), start_str, end_str, risk_free_rate)
             if mk_weights is None:
@@ -90,6 +86,10 @@ def render():
                 weights = mk_weights
                 st.caption("Poids issus du portefeuille Markowitz max-Sharpe : " + ", ".join(f"{t} {w * 100:.0f}%" for t, w in zip(tickers, mk_weights)))
     st.divider()
+
+    if len(tickers) < 2:
+        st.info("Sélectionnez au moins 2 actifs pour lancer un backtest.")
+        return
 
     weights_tuple = tuple(weights) if weights is not None else None
     with st.spinner("Backtest en cours…"):

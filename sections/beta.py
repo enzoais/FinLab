@@ -8,7 +8,7 @@ from config import DEFAULT_ASSET_TICKER, DEFAULT_RISK_FREE_RATE
 from services import capm_service
 from utils.formatters import format_pct
 from utils.plot_config import apply_theme, COLOR_PRIMARY, COLOR_NEGATIVE, COLOR_ACCENT
-from utils.ui import kpi_row, section_header, advanced_expander, show_data_error, info_inline
+from utils.ui import kpi_row, section_header, advanced_expander, show_data_error, info_inline, asset_selectbox
 
 
 @st.cache_data(ttl=3600)
@@ -33,15 +33,10 @@ def render():
     with st.expander("Paramètres", expanded=True):
         c1, c2, c3 = st.columns(3)
         with c1:
-            asset_input = st.text_input(
-                "Action (ticker ou nom)",
-                value=DEFAULT_ASSET_TICKER,
-                placeholder="ex. AAPL, Apple, Microsoft",
-                help="Saisissez un ticker (AAPL) ou un nom (Apple). Le nom est résolu vers le ticker principal.",
-                key="beta_asset",
-            ).strip() or DEFAULT_ASSET_TICKER
-            resolved_ticker, resolved_name, resolved_exchange = capm_service.resolve_asset_ticker(asset_input)
-            asset_ticker = resolved_ticker if resolved_ticker else asset_input
+            asset_ticker = asset_selectbox(
+                "Action", DEFAULT_ASSET_TICKER, key="beta_asset",
+                help="Cherchez par nom ou ticker (ex. tapez « app » → Apple). Tout ticker peut aussi être saisi librement.",
+            )
             benchmark_label = st.selectbox("Benchmark", options=list(capm_service.BENCHMARK_OPTIONS.keys()), index=0, key="beta_benchmark")
             benchmark_ticker = capm_service.BENCHMARK_OPTIONS[benchmark_label]
         with c2:
@@ -75,7 +70,7 @@ def render():
     rolling_beta_series = result["rolling_beta"]
 
     # Contexte compact
-    name = resolved_name or capm_service.get_asset_display_info(asset_ticker)[0]
+    name = capm_service.get_asset_display_info(asset_ticker)[0]
     label = f"{name} ({asset_ticker})" if name else asset_ticker
     st.info(f"**{label}** vs **{benchmark_label}** · {start_str} → {end_str}")
 

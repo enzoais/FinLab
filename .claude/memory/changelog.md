@@ -1,5 +1,11 @@
 # Changelog — FinLab
 
+## 2026-07-02 — Recherche d'actions filtrable
+- Remplacement des zones de texte « tape le ticker » par une recherche filtrable native (tape « app » → Apple).
+- `utils/tickers_catalog.py` : catalogue Nom→ticker (US, Europe, ETF) ; helpers `asset_selectbox` / `asset_multiselect` (utils/ui.py) avec `accept_new_options` (ticker libre autorisé).
+- Recâblage des 5 onglets de saisie (Bêta, Options, Simulation en simple ; Portefeuille, Backtest en multi + chips). Garde-fou « au moins 2 actifs ».
+- `tests/test_tickers_catalog.py` → **137 verts**. Toujours aucune dépendance pip.
+
 ## 2026-07-02 — Refonte « entretien quant »
 - Design clair & pro : `.streamlit/config.toml` (fond blanc, accent bleu, ardoise) + `apply_theme(fig)` commun à tous les graphes.
 - Glossaire au clic : `utils/glossary.py` (70 entrées FR) + helpers `utils/ui.py` (`metric_with_info`/popover ⓘ, `kpi_row`, `section_header`, `advanced_expander`, `show_data_error`).

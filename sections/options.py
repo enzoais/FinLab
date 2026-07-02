@@ -11,7 +11,7 @@ from config import (
 from services import black_scholes_service, capm_service
 from utils.formatters import format_pct
 from utils.plot_config import apply_theme, COLOR_PRIMARY, COLOR_MUTED
-from utils.ui import kpi_row, section_header, advanced_expander, show_data_error, info_inline, metric_with_info
+from utils.ui import kpi_row, section_header, advanced_expander, show_data_error, info_inline, metric_with_info, asset_selectbox
 
 
 def _fmt_greek(value, decimals=4):
@@ -49,9 +49,10 @@ def render():
             spot_manual, asset_ticker, resolved_name = None, None, None
             use_hist_vol, hist_vol_window = False, 30
             if spot_source == "Ticker (spot du marché)":
-                ticker_input = st.text_input("Ticker", value=DEFAULT_ASSET_TICKER, placeholder="ex. AAPL", key="opt_ticker").strip() or DEFAULT_ASSET_TICKER
-                resolved_ticker, resolved_name, _ = capm_service.resolve_asset_ticker(ticker_input)
-                asset_ticker = resolved_ticker or ticker_input
+                asset_ticker = asset_selectbox(
+                    "Sous-jacent", DEFAULT_ASSET_TICKER, key="opt_ticker",
+                    help="Cherchez par nom ou ticker (ex. tapez « app » → Apple).",
+                )
                 use_hist_vol = st.checkbox("Volatilité historique (pré-remplir σ)", value=False, key="opt_use_hv")
                 if use_hist_vol:
                     hist_vol_window = st.selectbox("Fenêtre (jours)", [21, 30, 63, 126], index=1, key="opt_hv_window")

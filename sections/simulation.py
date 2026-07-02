@@ -7,10 +7,10 @@ from config import (
     DEFAULT_ASSET_TICKER, DEFAULT_MC_DRIFT, DEFAULT_MC_HORIZON_YEARS, DEFAULT_MC_INITIAL_WEALTH,
     DEFAULT_MC_PATHS, DEFAULT_MC_STEPS_PER_YEAR, DEFAULT_MC_VOLATILITY,
 )
-from services import capm_service, monte_carlo_service
+from services import monte_carlo_service
 from utils.formatters import format_pct
 from utils.plot_config import apply_theme, COLOR_PRIMARY, COLOR_NEGATIVE
-from utils.ui import kpi_row, section_header, advanced_expander, info_inline, metric_with_info
+from utils.ui import kpi_row, section_header, advanced_expander, info_inline, metric_with_info, asset_selectbox
 
 
 @st.cache_data(ttl=3600)
@@ -34,8 +34,10 @@ def render():
             param_source = st.radio("Paramètres μ et σ", ["Manuel (μ, σ)", "Depuis un ticker"], index=0, key="mc_param_source")
             mu_input, sigma_input, ticker_used = float(DEFAULT_MC_DRIFT), float(DEFAULT_MC_VOLATILITY), None
             if param_source == "Depuis un ticker":
-                ticker_input = st.text_input("Ticker", value=DEFAULT_ASSET_TICKER, placeholder="ex. AAPL, SPY", key="mc_ticker").strip() or DEFAULT_ASSET_TICKER
-                ticker_used = capm_service.resolve_asset_ticker(ticker_input)[0] or ticker_input
+                ticker_used = asset_selectbox(
+                    "Sous-jacent", DEFAULT_ASSET_TICKER, key="mc_ticker",
+                    help="Cherchez par nom ou ticker (ex. tapez « app » → Apple).",
+                )
                 years = {"5 ans": 5, "3 ans": 3, "2 ans": 2, "1 an": 1}[st.selectbox("Période historique", ["5 ans", "3 ans", "2 ans", "1 an"], index=0, key="mc_period")]
                 end_dt = pd.Timestamp.now()
                 with st.spinner("Estimation de μ et σ…"):

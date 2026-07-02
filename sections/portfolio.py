@@ -8,7 +8,7 @@ from config import DEFAULT_MARKOWITZ_TICKERS, DEFAULT_RISK_FREE_RATE
 from services import capm_service, markowitz_service
 from utils.formatters import format_pct
 from utils.plot_config import apply_theme, COLOR_PRIMARY, COLOR_NEGATIVE, COLOR_BENCHMARK, COLOR_POSITIVE
-from utils.ui import kpi_row, section_header, advanced_expander, show_data_error, info_inline, metric_with_info
+from utils.ui import kpi_row, section_header, advanced_expander, show_data_error, info_inline, metric_with_info, asset_multiselect
 
 
 @st.cache_data(ttl=3600)
@@ -31,20 +31,10 @@ def render():
     with st.expander("Paramètres", expanded=True):
         c1, c2 = st.columns(2)
         with c1:
-            default_tickers = "\n".join(DEFAULT_MARKOWITZ_TICKERS)
-            tickers_text = st.text_area(
-                "Actifs (un ticker ou nom par ligne)", value=default_tickers,
-                help="Un ticker (AAPL) ou nom (Nvidia) par ligne. Au moins 2 actifs.", height=120,
-                key="pf_tickers",
-            ).strip() or default_tickers
-            tickers, seen = [], set()
-            for q in [t.strip() for t in tickers_text.splitlines() if t.strip()]:
-                sym = (capm_service.resolve_asset_ticker(q)[0] or q).strip().upper()
-                if sym and sym not in seen:
-                    tickers.append(sym)
-                    seen.add(sym)
-            if not tickers:
-                tickers = list(DEFAULT_MARKOWITZ_TICKERS)
+            tickers = asset_multiselect(
+                "Actifs du portefeuille", list(DEFAULT_MARKOWITZ_TICKERS), key="pf_tickers",
+                help="Cherchez par nom ou ticker (ex. tapez « app » → Apple). Au moins 2 actifs ; tout ticker peut être ajouté librement.",
+            )
             risk_free_rate = st.number_input("Taux sans risque", 0.0, 0.30, float(DEFAULT_RISK_FREE_RATE), 0.005, format="%.3f", key="pf_rf")
             period_preset = st.selectbox("Période", ["5 ans", "3 ans", "2 ans", "1 an"], index=0, key="pf_period")
             years = {"5 ans": 5, "3 ans": 3, "2 ans": 2, "1 an": 1}[period_preset]
@@ -65,6 +55,10 @@ def render():
                 max_weight_pct = st.number_input("Poids max par actif (%)", 5, 100, 100, 5, key="pf_max_weight")
             max_weight_per_asset = max_weight_pct / 100.0
     st.divider()
+
+    if len(tickers) < 2:
+        st.info("Sélectionnez au moins 2 actifs pour optimiser un portefeuille.")
+        return
 
     with st.spinner("Chargement et optimisation du portefeuille…"):
         result = _load_markowitz_results(
