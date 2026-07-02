@@ -1,9 +1,9 @@
 """
-FinLab — tab-based finance app.
+FinLab — labo de finance quantitative (application à onglets).
 """
 import streamlit as st
 
-from sections import beta, portfolio, bonds, options, simulation
+from sections import beta, portfolio, bonds, options, simulation, backtest
 
 st.set_page_config(
     page_title="FinLab",
@@ -13,27 +13,21 @@ st.set_page_config(
 )
 
 st.title("FinLab")
-st.markdown("CAPM · Portfolio · Bonds · Options · Simulation")
+st.caption("Labo de finance quantitative — Bêta · Portefeuille · Obligations · Options · Simulation · Backtest")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Beta (CAPM)",
-    "Portfolio (Markowitz)",
-    "Bonds",
-    "Options (Black-Scholes)",
-    "Simulation (Monte Carlo)",
-])
+TABS = [
+    ("Bêta (CAPM)", beta),
+    ("Portefeuille", portfolio),
+    ("Obligations", bonds),
+    ("Options", options),
+    ("Simulation", simulation),
+    ("Backtest", backtest),
+]
 
-with tab1:
-    beta.render()
-
-with tab2:
-    portfolio.render()
-
-with tab3:
-    bonds.render()
-
-with tab4:
-    options.render()
-
-with tab5:
-    simulation.render()
+for tab, (label, module) in zip(st.tabs([label for label, _ in TABS]), TABS):
+    with tab:
+        try:
+            module.render()
+        except Exception as exc:  # noqa: BLE001 — garde-fou démo live : jamais de traceback à l'écran
+            st.warning("⚠️ Une erreur est survenue sur cet onglet. Ajustez les paramètres et réessayez.")
+            st.caption(f"Détail : {type(exc).__name__}")
