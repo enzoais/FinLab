@@ -19,6 +19,9 @@ build/
 *.swp
 *.swo
 
+# Claude Code — réglages perso locaux (autopilote), à ne pas committer
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db

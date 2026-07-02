@@ -1,5 +1,17 @@
 # Lessons — FinLab
 
+## Widgets Streamlit : clé unique obligatoire entre onglets (2026-07-02)
+`st.tabs` rend le contenu de **tous** les onglets dans le même run. Deux widgets d'entrée
+(`number_input`, `selectbox`, `radio`, `text_input`, `text_area`, `checkbox`) avec des
+paramètres identiques dans des onglets différents → `StreamlitDuplicateElementId`.
+→ Toujours donner un `key=` unique préfixé par onglet (ex. `beta_rf`, `pf_rf`, `bond_rf`).
+Note : `st.popover`, `st.expander`, `st.metric`, `st.plotly_chart` sont des conteneurs/affichage,
+pas des widgets à état → pas de collision (plusieurs boutons ⓘ `st.popover("ⓘ")` cohabitent sans clé).
+
+## Options : défaut spot manuel « à la monnaie » pour une démo lisible (2026-07-02)
+Défaut sur « Ticker » (spot AAPL ~308) avec strike 100 = très dans la monnaie → Delta=1, Gamma/Vega≈0
+(corrects mais illisibles). Défaut = « Spot manuel » (100/100, ATM) → Greeks parlants dès l'ouverture.
+
 ## Monte Carlo : drift arithmétique vs drift log (2026-07-02)
 `simulate_gbm_paths` attend un drift **arithmétique** `mu` (SDE dS/S = mu·dt + σ·dW),
 car il calcule `(mu − 0.5σ²)`. La moyenne des log-rendements estime déjà `(mu − 0.5σ²)`.
