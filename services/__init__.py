@@ -7,4 +7,5 @@ from services import (
     fixed_income_service,
     markowitz_service,
     monte_carlo_service,
+    risk_service,
 )

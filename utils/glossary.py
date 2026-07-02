@@ -196,6 +196,46 @@ GLOSSARY: dict[str, str] = {
         "**Comment ça se calcule ?** On prend la moyenne des rendements situés dans la pire tranche "
         "(ex. les 5 % de pires jours)."
     ),
+    "parametric_var": (
+        "**C'est quoi ?** La VaR paramétrique (variance-covariance) estime la perte potentielle en "
+        "supposant que les rendements suivent une loi normale.\n\n"
+        "**À quoi ça sert ?** À calculer une VaR rapidement et de façon lisible, sans historique long. "
+        "C'est l'une des 3 méthodes classiques (avec l'historique et le Monte-Carlo).\n\n"
+        "**Comment ça se calcule ?** À partir de la moyenne et de l'écart-type des rendements : VaR ≈ moyenne "
+        "+ un multiple (issu de la loi normale) × écart-type. Attention : elle sous-estime les queues épaisses."
+    ),
+    "stress_test": (
+        "**C'est quoi ?** Un stress test mesure l'impact sur le portefeuille d'un scénario de marché extrême "
+        "(krach 2008, COVID, choc de taux…).\n\n"
+        "**À quoi ça sert ?** À voir la perte potentielle dans des conditions rares que la VaR « normale » "
+        "capte mal. C'est un pilier du suivi des risques de fonds et de mandats.\n\n"
+        "**Comment ça se calcule ?** On applique un choc de marché et on estime la perte via la sensibilité du "
+        "portefeuille (son bêta), ou on rejoue une période historique de crise. Résultat exprimé en % et en euros."
+    ),
+    "concentration": (
+        "**C'est quoi ?** Le risque de concentration mesure à quel point le portefeuille dépend d'un petit "
+        "nombre de positions.\n\n"
+        "**À quoi ça sert ?** Un portefeuille trop concentré est fragile : une seule ligne peut faire mal. On "
+        "suit le poids des plus grosses positions et le nombre « effectif » de lignes.\n\n"
+        "**Comment ça se calcule ?** Via l'indice de Herfindahl (HHI = somme des poids au carré) ; son inverse "
+        "(1/HHI) donne le nombre effectif de positions, et on regarde le poids du top-3."
+    ),
+    "risk_contribution": (
+        "**C'est quoi ?** La contribution au risque indique quelle part du risque total du portefeuille "
+        "provient de chaque position.\n\n"
+        "**À quoi ça sert ?** À voir d'où vient vraiment le risque : une petite ligne très volatile ou très "
+        "corrélée peut contribuer plus que son poids. Essentiel pour le suivi d'un fonds.\n\n"
+        "**Comment ça se calcule ?** À partir du poids de chaque actif et de sa contribution marginale à la "
+        "volatilité (via la matrice de covariance), rapportée en % du risque total."
+    ),
+    "var_backtesting": (
+        "**C'est quoi ?** Le backtesting de la VaR vérifie a posteriori si le modèle de VaR était fiable, en "
+        "comptant les « dépassements » (jours où la perte a excédé la VaR).\n\n"
+        "**À quoi ça sert ?** À valider le modèle : trop de dépassements = VaR trop optimiste (risque "
+        "sous-estimé) ; trop peu = VaR trop conservatrice. C'est une exigence réglementaire (Bâle).\n\n"
+        "**Comment ça se calcule ?** On compare le nombre de dépassements observés au nombre attendu "
+        "((1−confiance) × nombre de jours). Le test de Kupiec juge si l'écart est statistiquement acceptable."
+    ),
     "tracking_error": (
         "**C'est quoi ?** La tracking error mesure de combien votre portefeuille s'écarte du benchmark au "
         "fil du temps.\n\n"

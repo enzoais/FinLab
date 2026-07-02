@@ -1,5 +1,12 @@
 # Changelog — FinLab
 
+## 2026-07-02 — Onglet Risque (alignement poste RMM Risques d'Investissement)
+- `services/risk_service.py` (pur, testé) : VaR 3 méthodes (historique, paramétrique, Monte-Carlo) + CVaR, mise à l'horizon (√t), stress tests (choc marché × bêta + pire jour/semaine observés), concentration (HHI, positions effectives, top-3), contribution au risque par ligne, backtesting VaR (test de Kupiec).
+- `sections/risk.py` : 7ᵉ onglet. KPI (VaR/CVaR €, vol, positions effectives) → table VaR 3 méthodes → héros stress tests (€) → Avancé (concentration, contribution, Kupiec). Encours/confiance/horizon/benchmark paramétrables.
+- Glossaire : `stress_test`, `parametric_var`, `concentration`, `risk_contribution`, `var_backtesting`.
+- Choix honnête : stress 2008/COVID = chocs hypothétiques via bêta (pas de données 2008 sur 5 ans), assumé à l'écran.
+- Tests : `tests/test_risk_service.py` (12) + clés glossaire → **160 verts**. Toujours aucune dépendance pip.
+
 ## 2026-07-02 — DV01 / CS01 (fixed income, alignement CV HSBC)
 - `fixed_income_service` : ajout `dv01` (repricing +1 bp de taux) et `cs01` (spread) ; exposés par `run_bond_analysis`.
 - Onglet Obligations : cartes DV01/CS01 (+ⓘ) + nouveau mode « Sans risque + spread crédit » (prix = actualisation au taux sans risque + spread, champ spread en bp).

@@ -13,6 +13,8 @@ EXPECTED_KEYS = [
     "markowitz", "efficient_frontier", "min_variance", "max_sharpe", "sharpe_ratio",
     "portfolio_volatility", "expected_return", "diversification_ratio", "optimal_weights",
     "covariance", "correlation", "var", "cvar", "tracking_error", "information_ratio", "alpha",
+    # Risque (fonds / mandat)
+    "parametric_var", "stress_test", "concentration", "risk_contribution", "var_backtesting",
     # Obligations
     "bond_price", "ytm", "macaulay_duration", "modified_duration", "convexity",
     "coupon_rate", "spread_vs_rf", "accrued_interest", "clean_dirty_price", "price_yield_curve",
