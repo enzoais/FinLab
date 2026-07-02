@@ -1,5 +1,11 @@
 # Changelog — FinLab
 
+## 2026-07-02 — DV01 / CS01 (fixed income, alignement CV HSBC)
+- `fixed_income_service` : ajout `dv01` (repricing +1 bp de taux) et `cs01` (spread) ; exposés par `run_bond_analysis`.
+- Onglet Obligations : cartes DV01/CS01 (+ⓘ) + nouveau mode « Sans risque + spread crédit » (prix = actualisation au taux sans risque + spread, champ spread en bp).
+- Choix honnête : pour une obligation vanille à taux fixe, CS01 = DV01 (même décalage du taux d'actualisation) — documenté (bon point à l'oral). Glossaire : entrées `dv01`, `cs01`.
+- Tests : DV01 ≈ duration modifiée × prix × 1 bp, CS01 = DV01, DV01 croît avec la maturité → **143 verts**.
+
 ## 2026-07-02 — Recherche d'actions filtrable
 - Remplacement des zones de texte « tape le ticker » par une recherche filtrable native (tape « app » → Apple).
 - `utils/tickers_catalog.py` : catalogue Nom→ticker (US, Europe, ETF) ; helpers `asset_selectbox` / `asset_multiselect` (utils/ui.py) avec `accept_new_options` (ticker libre autorisé).

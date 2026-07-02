@@ -267,6 +267,23 @@ GLOSSARY: dict[str, str] = {
         "d'environ 7 % si les taux montent de 1 %.\n\n"
         "**Comment ça se calcule ?** C'est la duration de Macaulay ajustée par le taux de rendement."
     ),
+    "dv01": (
+        "**C'est quoi ?** Le DV01 (aussi appelé PV01) est la variation du prix d'une obligation, en euros, "
+        "pour une hausse de 1 point de base (0,01 %) des taux.\n\n"
+        "**À quoi ça sert ?** À chiffrer et couvrir le risque de taux en montant concret : « si les taux montent "
+        "de 1 bp, je perds X € ». Les desks l'utilisent pour dimensionner les couvertures et suivre des limites.\n\n"
+        "**Comment ça se calcule ?** On revalorise l'obligation au taux actuel puis au taux +1 bp, et on prend "
+        "la différence de prix. En pratique, DV01 ≈ duration modifiée × prix × 0,0001."
+    ),
+    "cs01": (
+        "**C'est quoi ?** Le CS01 est la variation du prix pour une hausse de 1 point de base du spread de "
+        "crédit (la prime de risque de l'émetteur).\n\n"
+        "**À quoi ça sert ?** À mesurer le risque de crédit en montant : « si le spread s'écarte de 1 bp, je perds "
+        "X € ». Essentiel pour suivre le risque émetteur d'un portefeuille obligataire.\n\n"
+        "**Comment ça se calcule ?** Le spread s'ajoute au taux d'actualisation : on revalorise avec un spread "
+        "+1 bp. Pour une obligation vanille à taux fixe, CS01 = DV01 (même décalage du taux d'actualisation) ; "
+        "ils divergent au niveau d'un portefeuille ou avec une courbe taux/spread distincte."
+    ),
     "convexity": (
         "**C'est quoi ?** La convexité affine la duration : elle capte l'effet non linéaire quand les taux "
         "bougent beaucoup.\n\n"

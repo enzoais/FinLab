@@ -16,6 +16,7 @@ EXPECTED_KEYS = [
     # Obligations
     "bond_price", "ytm", "macaulay_duration", "modified_duration", "convexity",
     "coupon_rate", "spread_vs_rf", "accrued_interest", "clean_dirty_price", "price_yield_curve",
+    "dv01", "cs01",
     # Options
     "black_scholes", "call", "put", "implied_volatility", "delta", "gamma", "theta", "vega",
     "rho", "spot", "strike", "time_to_expiry", "volatility", "intrinsic_value", "payoff",

@@ -38,13 +38,21 @@ def render():
             maturity_years = st.number_input("Maturité (années)", 0.5, 50.0, float(DEFAULT_BOND_MATURITY_YEARS), 0.5, format="%.1f", key="bond_maturity")
             frequency = st.selectbox("Fréquence des coupons", freq_opts, index=freq_opts.index(DEFAULT_BOND_FREQUENCY), format_func=lambda f: freq_labels[f], key="bond_freq")
         with c2:
-            input_mode = st.radio("Saisie", ["Taux (YTM)", "Prix de marché"], index=0, key="bond_input_mode")
+            risk_free_rate = st.number_input("Taux sans risque", 0.0, 0.30, float(DEFAULT_RISK_FREE_RATE), 0.005, format="%.3f", key="bond_rf")
+            input_mode = st.radio(
+                "Saisie du rendement", ["Taux (YTM)", "Prix de marché", "Sans risque + spread crédit"],
+                index=0, key="bond_input_mode",
+                help="« Sans risque + spread » price l'obligation au taux sans risque augmenté d'un spread de crédit (risque émetteur).",
+            )
             ytm_input = price_input = None
             if input_mode == "Taux (YTM)":
                 ytm_input = st.number_input("YTM (%)", -5.0, 30.0, float(DEFAULT_BOND_YTM * 100), 0.25, format="%.2f", key="bond_ytm") / 100.0
-            else:
+            elif input_mode == "Prix de marché":
                 price_input = st.number_input("Prix", 1.0, 1_000_000.0, 100.0, 1.0, format="%.2f", key="bond_price_in")
-            risk_free_rate = st.number_input("Taux sans risque", 0.0, 0.30, float(DEFAULT_RISK_FREE_RATE), 0.005, format="%.3f", key="bond_rf")
+            else:  # Sans risque + spread de crédit
+                credit_spread_bp = st.number_input("Spread de crédit (bp)", 0.0, 2000.0, 100.0, 5.0, format="%.0f", key="bond_spread")
+                ytm_input = risk_free_rate + credit_spread_bp / 10_000.0
+                st.caption(f"Rendement total = {risk_free_rate * 100:.2f} % (sans risque) + {credit_spread_bp:.0f} bp = {ytm_input * 100:.2f} %")
         with c3:
             with st.expander("Plage de la courbe prix-taux", expanded=False):
                 ytm_min = st.number_input("YTM min (%)", value=0.5, step=0.5, format="%.1f", key="bond_ytm_min") / 100.0
@@ -75,6 +83,20 @@ def render():
         ("Convexité", f"{conv:.2f}", "convexity"),
     ])
     st.caption("Pour +1 % de taux : variation du prix ≈ − duration modifiée × 1 % + ½ × convexité × (1 %)².")
+
+    # ----- Sensibilités DV01 / CS01 (risque de taux et de crédit) -----
+    st.markdown("")
+    s1, s2 = st.columns(2)
+    with s1:
+        dv01_val = result.get("dv01")
+        metric_with_info("DV01 (par 1 bp de taux)", f"{dv01_val:.4f}" if dv01_val == dv01_val else "—", "dv01")
+    with s2:
+        cs01_val = result.get("cs01")
+        metric_with_info("CS01 (par 1 bp de spread)", f"{cs01_val:.4f}" if cs01_val == cs01_val else "—", "cs01")
+    st.caption(
+        "DV01 et CS01 sont en unités de prix par 1 bp. Pour une obligation vanille à taux fixe, ils "
+        "coïncident (même décalage du taux d'actualisation) et divergeraient au niveau d'un portefeuille."
+    )
 
     # ----- Graphe héros : courbe prix-taux -----
     st.markdown("")

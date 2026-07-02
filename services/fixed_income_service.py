@@ -180,6 +180,47 @@ def convexity(
     return factor * weighted_sum
 
 
+def dv01(
+    face_value: float,
+    coupon_rate: float,
+    maturity_years: float,
+    frequency: int,
+    ytm: float,
+    price: float | None = None,
+) -> float:
+    """
+    DV01 (Dollar Value of 1 basis point) / PV01 : variation du prix (en devise) pour une hausse
+    de 1 bp du taux. Calculée par repricing (P(y) − P(y+1bp)), positive car le prix baisse
+    quand les taux montent. Cohérent avec duration modifiée × prix × 0,0001.
+    """
+    if price is None:
+        price = bond_price_dcf(face_value, coupon_rate, maturity_years, frequency, ytm)
+    if price is None or np.isnan(price):
+        return np.nan
+    bumped = bond_price_dcf(face_value, coupon_rate, maturity_years, frequency, ytm + 0.0001)
+    if np.isnan(bumped):
+        return np.nan
+    return price - bumped
+
+
+def cs01(
+    face_value: float,
+    coupon_rate: float,
+    maturity_years: float,
+    frequency: int,
+    ytm: float,
+    price: float | None = None,
+) -> float:
+    """
+    CS01 (Credit Spread 01) : variation du prix pour une hausse de 1 bp du spread de crédit.
+    Le spread s'ajoute au taux d'actualisation : pour une obligation vanille à taux fixe,
+    un choc de +1 bp de spread décale le taux d'actualisation exactement comme +1 bp de taux,
+    donc CS01 = DV01 en magnitude. (Ils divergeraient au niveau d'un portefeuille ou d'une
+    courbe taux/spread distincte.)
+    """
+    return dv01(face_value, coupon_rate, maturity_years, frequency, ytm, price)
+
+
 def cash_flows_table(
     face_value: float,
     coupon_rate: float,
@@ -377,6 +418,8 @@ def run_bond_analysis(
     mac_dur = macaulay_duration(face_value, coupon_rate, maturity_years, frequency, ytm_val, price_val)
     mod_dur = modified_duration(face_value, coupon_rate, maturity_years, frequency, ytm_val, price_val)
     conv = convexity(face_value, coupon_rate, maturity_years, frequency, ytm_val, price_val)
+    dv01_val = dv01(face_value, coupon_rate, maturity_years, frequency, ytm_val, price_val)
+    cs01_val = cs01(face_value, coupon_rate, maturity_years, frequency, ytm_val, price_val)
 
     cf_rows = cash_flows_table(face_value, coupon_rate, maturity_years, frequency, ytm_val)
     y_grid, p_grid = price_yield_curve(
@@ -392,6 +435,8 @@ def run_bond_analysis(
         "macaulay_duration": round(mac_dur, 2),
         "modified_duration": round(mod_dur, 2),
         "convexity": round(conv, 2),
+        "dv01": round(dv01_val, 4) if not np.isnan(dv01_val) else np.nan,
+        "cs01": round(cs01_val, 4) if not np.isnan(cs01_val) else np.nan,
         "cash_flows": cf_rows,
         "yield_grid": y_grid,
         "price_grid": p_grid,

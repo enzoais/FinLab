@@ -75,6 +75,35 @@ def test_run_bond_analysis_rejects_bad_frequency():
     assert out["success"] is False
 
 
+def test_dv01_positive_and_matches_modified_duration():
+    # DV01 (variation de prix pour +1 bp) ≈ duration modifiée × prix × 0,0001
+    price = fi.bond_price_dcf(**BOND, ytm=0.05)
+    mod = fi.modified_duration(**BOND, ytm=0.05)
+    dv = fi.dv01(**BOND, ytm=0.05)
+    assert dv > 0
+    assert dv == pytest.approx(mod * price * 1e-4, rel=1e-2)
+
+
+def test_cs01_equals_dv01_for_vanilla_bond():
+    # Pour une obligation vanille à taux fixe, CS01 = DV01 (même décalage du taux d'actualisation)
+    dv = fi.dv01(**BOND, ytm=0.05)
+    cs = fi.cs01(**BOND, ytm=0.05)
+    assert cs == pytest.approx(dv, abs=1e-12)
+
+
+def test_dv01_increases_with_maturity():
+    short = fi.dv01(face_value=100.0, coupon_rate=0.05, maturity_years=2.0, frequency=2, ytm=0.05)
+    long = fi.dv01(face_value=100.0, coupon_rate=0.05, maturity_years=20.0, frequency=2, ytm=0.05)
+    assert long > short  # plus la maturité est longue, plus la sensibilité au taux est grande
+
+
+def test_run_bond_analysis_exposes_dv01_cs01():
+    out = fi.run_bond_analysis(**BOND, ytm=0.05)
+    assert out["success"] is True
+    assert out["dv01"] > 0
+    assert out["cs01"] == pytest.approx(out["dv01"], abs=1e-4)
+
+
 def test_rate_scenarios_direction():
     base_price = fi.bond_price_dcf(**BOND, ytm=0.05)
     rows = fi.rate_scenarios(**BOND, base_ytm=0.05, base_price=base_price, shifts_bp=[-100, 100])
