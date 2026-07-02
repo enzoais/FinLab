@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from scipy.stats import norm, chi2
+from scipy.stats import norm, chi2, skew, kurtosis
 
 from services.markowitz_service import download_prices_multi, risk_decomposition
 from services.backtest_service import equal_weights, normalize_weights, _download_close_series
@@ -75,6 +75,100 @@ def var_monte_carlo(
         np.random.seed(seed)
     sims = np.random.normal(mu, sigma, n_sims)
     return var_historical(sims, confidence)
+
+
+def var_cornish_fisher(returns: np.ndarray, confidence: float = 0.95) -> tuple[float, float]:
+    """
+    VaR modifiée (Cornish-Fisher) : corrige le quantile normal par l'asymétrie (skewness) et
+    l'aplatissement (kurtosis) des rendements → capte mieux les queues épaisses.
+    CVaR estimée par la moyenne des rendements sous le seuil corrigé. Retourne (var, cvar).
+    """
+    r = np.asarray(returns, dtype=float).ravel()
+    if len(r) < 4:
+        return (0.0, 0.0)
+    mu, sigma = float(np.mean(r)), float(np.std(r))
+    s = float(skew(r))
+    k = float(kurtosis(r))  # excès de kurtosis (Fisher : 0 pour une normale)
+    z = norm.ppf(1 - confidence)  # négatif
+    z_cf = (
+        z
+        + (z ** 2 - 1) / 6 * s
+        + (z ** 3 - 3 * z) / 24 * k
+        - (2 * z ** 3 - 5 * z) / 36 * s ** 2
+    )
+    var = mu + z_cf * sigma
+    tail = r[r <= var]
+    cvar = float(np.mean(tail)) if len(tail) > 0 else var
+    return (float(var), float(cvar))
+
+
+def ewma_volatility(returns: np.ndarray, lam: float = 0.94) -> float:
+    """Volatilité EWMA (RiskMetrics) : σ²ₜ = λ·σ²ₜ₋₁ + (1−λ)·r²ₜ₋₁ (plus de poids au récent)."""
+    r = np.asarray(returns, dtype=float).ravel()
+    if len(r) < 2:
+        return 0.0
+    var = float(np.var(r))  # amorçage sur la variance d'échantillon
+    for x in r:
+        var = lam * var + (1 - lam) * x ** 2
+    return float(np.sqrt(var))
+
+
+def var_ewma(returns: np.ndarray, confidence: float = 0.95, lam: float = 0.94) -> tuple[float, float]:
+    """
+    VaR EWMA / RiskMetrics : VaR paramétrique utilisant la volatilité EWMA, moyenne supposée nulle.
+    Retourne (var, cvar) en rendement (négatifs = perte).
+    """
+    r = np.asarray(returns, dtype=float).ravel()
+    if len(r) < 2:
+        return (0.0, 0.0)
+    sigma = ewma_volatility(r, lam)
+    alpha = 1 - confidence
+    z = norm.ppf(alpha)
+    var = z * sigma
+    cvar = -sigma * norm.pdf(z) / alpha
+    return (float(var), float(cvar))
+
+
+def var_decomposition(weights: np.ndarray, cov: np.ndarray, confidence: float, aum: float) -> dict:
+    """
+    Décomposition de la VaR paramétrique (part liée à la volatilité) par position.
+    - Marginal VaR : sensibilité de la VaR à une hausse marginale du poids d'une ligne.
+    - Component VaR : contribution de chaque ligne (Σ = VaR totale).
+    - Incremental VaR : effet de retirer complètement la ligne (poids restants renormalisés).
+    Retourne des tableaux (en € et en % pour la Component VaR).
+    """
+    w = np.asarray(weights, dtype=float).ravel()
+    sigma_mat = np.asarray(cov, dtype=float)
+    n = len(w)
+    sigma_p = float(np.sqrt(w @ sigma_mat @ w))
+    z = norm.ppf(1 - confidence)  # négatif
+    if sigma_p <= 0:
+        zeros = np.zeros(n)
+        return {"marginal_var": zeros, "component_var_eur": zeros, "component_var_pct": zeros, "incremental_var_eur": zeros}
+    total_var = z * sigma_p  # rendement (négatif), part « volatilité » de la VaR
+    marginal = z * (sigma_mat @ w) / sigma_p          # marginal VaR par unité de poids
+    component = w * marginal                            # Σ = total_var
+    component_pct = component / total_var * 100.0       # somme = 100 %
+
+    incremental = np.zeros(n)
+    for i in range(n):
+        w2 = np.delete(w, i)
+        s = w2.sum()
+        if s <= 0:
+            incremental[i] = 0.0
+            continue
+        w2 = w2 / s
+        cov2 = np.delete(np.delete(sigma_mat, i, axis=0), i, axis=1)
+        sigma2 = float(np.sqrt(w2 @ cov2 @ w2))
+        var2 = z * sigma2
+        incremental[i] = total_var - var2  # négatif = la ligne ajoute du risque
+
+    return {
+        "marginal_var": marginal,
+        "component_var_eur": component * aum,
+        "component_var_pct": component_pct,
+        "incremental_var_eur": incremental * aum,
+    }
 
 
 def scale_to_horizon(var_1d: float, horizon_days: int) -> float:
@@ -230,12 +324,22 @@ def compute_risk(
     var_h, cvar_h = var_historical(port_ret, confidence)
     var_p, cvar_p = var_parametric(port_ret, confidence)
     var_mc, cvar_mc = var_monte_carlo(port_ret, confidence, seed=seed)
+    var_cf, cvar_cf = var_cornish_fisher(port_ret, confidence)
+    var_ew, cvar_ew = var_ewma(port_ret, confidence)
+
+    def _h(pair):
+        return {"var": scale_to_horizon(pair[0], horizon_days), "cvar": scale_to_horizon(pair[1], horizon_days)}
+
     methods = {
-        "historique": {"var": scale_to_horizon(var_h, horizon_days), "cvar": scale_to_horizon(cvar_h, horizon_days)},
-        "parametrique": {"var": scale_to_horizon(var_p, horizon_days), "cvar": scale_to_horizon(cvar_p, horizon_days)},
-        "monte_carlo": {"var": scale_to_horizon(var_mc, horizon_days), "cvar": scale_to_horizon(cvar_mc, horizon_days)},
+        "historique": _h((var_h, cvar_h)),
+        "parametrique": _h((var_p, cvar_p)),
+        "monte_carlo": _h((var_mc, cvar_mc)),
+        "cornish_fisher": _h((var_cf, cvar_cf)),
+        "ewma": _h((var_ew, cvar_ew)),
     }
     ann_vol = float(np.std(port_ret) * np.sqrt(ANNUALIZE))
+    return_skew = float(skew(port_ret)) if len(port_ret) >= 4 else 0.0
+    return_kurtosis = float(kurtosis(port_ret)) if len(port_ret) >= 4 else 0.0
 
     # Bêta pour les stress tests (défaut 1.0 sans benchmark)
     beta = 1.0
@@ -250,6 +354,7 @@ def compute_risk(
     hist_worst = historical_worst(port_ret, aum)
     concentration = concentration_metrics(w)
     contrib = component_risk_pct(w, cov)
+    var_decomp = var_decomposition(w, cov, confidence, aum)
     kupiec = kupiec_test(port_ret, var_historical(port_ret, kupiec_confidence)[0], kupiec_confidence)
 
     return {
@@ -262,7 +367,10 @@ def compute_risk(
         "horizon_days": horizon_days,
         "beta": beta,
         "annualized_volatility": ann_vol,
+        "return_skew": return_skew,
+        "return_kurtosis": return_kurtosis,
         "var_methods": methods,
+        "var_decomposition": var_decomp,
         "stress_scenarios": stress,
         "historical_worst": hist_worst,
         "concentration": concentration,

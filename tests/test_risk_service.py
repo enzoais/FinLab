@@ -32,6 +32,47 @@ def test_var_methods_are_close_on_normal_data():
     assert vh < 0 and vp < 0 and vm < 0
 
 
+def test_cornish_fisher_close_to_parametric_on_normal_data():
+    rng = np.random.default_rng(10)
+    r = 0.01 * rng.standard_normal(30000)  # ~normal → skew≈0, kurtosis≈0
+    var_cf, _ = rk.var_cornish_fisher(r, 0.99)
+    var_p, _ = rk.var_parametric(r, 0.99)
+    assert var_cf == pytest.approx(var_p, abs=0.0008)
+
+
+def test_cornish_fisher_more_severe_on_fat_tails():
+    rng = np.random.default_rng(11)
+    # Loi de Student (queues épaisses) → VaR modifiée plus sévère que la normale
+    r = 0.01 * rng.standard_t(df=3, size=40000)
+    var_cf, _ = rk.var_cornish_fisher(r, 0.99)
+    var_p, _ = rk.var_parametric(r, 0.99)
+    assert var_cf < var_p  # plus négative (queue plus lourde captée)
+
+
+def test_ewma_var_negative_and_reacts_to_recent_vol():
+    rng = np.random.default_rng(12)
+    calm = 0.005 * rng.standard_normal(250)
+    turbulent = np.concatenate([calm, 0.03 * rng.standard_normal(250)])  # vol récente plus forte
+    var_calm, _ = rk.var_ewma(calm, 0.95)
+    var_turb, _ = rk.var_ewma(turbulent, 0.95)
+    assert var_calm < 0 and var_turb < 0
+    assert var_turb < var_calm  # période récente plus volatile → VaR EWMA plus sévère
+
+
+def test_var_decomposition_components_sum_to_total():
+    weights = np.array([0.5, 0.3, 0.2])
+    cov = np.array([[0.04, 0.01, 0.00], [0.01, 0.09, 0.02], [0.00, 0.02, 0.16]])
+    aum = 1_000_000.0
+    d = rk.var_decomposition(weights, cov, confidence=0.95, aum=aum)
+    # La somme des Component VaR = VaR paramétrique (part volatilité) du portefeuille
+    z = -1.6448536269514722  # norm.ppf(0.05)
+    sigma_p = np.sqrt(weights @ cov @ weights)
+    total_var_eur = z * sigma_p * aum
+    assert d["component_var_eur"].sum() == pytest.approx(total_var_eur, rel=1e-9)
+    assert d["component_var_pct"].sum() == pytest.approx(100.0, abs=1e-6)
+    assert len(d["incremental_var_eur"]) == 3
+
+
 def test_scale_to_horizon_root_time():
     assert rk.scale_to_horizon(-0.02, 10) == pytest.approx(-0.02 * np.sqrt(10), rel=1e-12)
 
@@ -105,8 +146,9 @@ def test_compute_risk_end_to_end():
     bench = pd.Series(100 * np.cumprod(1 + 0.009 * rng.standard_normal(n)), index=idx)
     out = rk.compute_risk(prices, weights=None, aum=1_000_000, confidence=0.95, horizon_days=1, benchmark_prices=bench)
     assert out["success"] is True
-    assert out["var_methods"]["historique"]["var"] < 0
-    assert out["var_methods"]["parametrique"]["var"] < 0
+    assert set(out["var_methods"].keys()) == {"historique", "parametrique", "monte_carlo", "cornish_fisher", "ewma"}
+    assert all(m["var"] < 0 for m in out["var_methods"].values())
+    assert out["var_decomposition"]["component_var_pct"].sum() == pytest.approx(100.0, abs=1e-6)
     assert len(out["stress_scenarios"]) == 4
     assert out["risk_contributions_pct"].sum() == pytest.approx(100.0, abs=1e-6)
     assert "passed" in out["kupiec"]

@@ -3,10 +3,11 @@
 ## État actuel (2026-07-02)
 Refonte « entretien quant » livrée. App claire & pro, **7 onglets** (Bêta, Portefeuille, Obligations,
 Options, Simulation, Backtest, **Risque**), déployée sur `main` → Streamlit Cloud.
-Tests : **160 verts**. Aucune dépendance pip ajoutée.
+Tests : **167 verts**. Aucune dépendance pip ajoutée.
 Cible entretien : alternance **Risques d'Investissement** (banque privée RMM / Rothschild & Co) — l'onglet
-Risque (VaR 3 méthodes, stress tests, concentration, Kupiec) couvre le cœur du poste ; recherche d'actions
-filtrable (catalogue Nom→ticker) ; DV01/CS01 pour la partie fixed income du CV (HSBC).
+Risque (VaR **5 méthodes** + décomposition Marginal/Component/Incremental, stress tests, concentration, Kupiec)
+couvre le cœur du poste ; recherche d'actions filtrable (catalogue Nom→ticker) ; DV01/CS01 pour la partie
+fixed income du CV (HSBC).
 
 ## Ce qui vient d'être fait (session refonte)
 - **Design system clair & pro** : `.streamlit/config.toml` (fond blanc, accent bleu #2563EB, texte ardoise),

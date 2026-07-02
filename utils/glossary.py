@@ -204,6 +204,31 @@ GLOSSARY: dict[str, str] = {
         "**Comment ça se calcule ?** À partir de la moyenne et de l'écart-type des rendements : VaR ≈ moyenne "
         "+ un multiple (issu de la loi normale) × écart-type. Attention : elle sous-estime les queues épaisses."
     ),
+    "modified_var": (
+        "**C'est quoi ?** La VaR de Cornish-Fisher (dite « modifiée ») corrige la VaR paramétrique pour "
+        "tenir compte de l'asymétrie (skewness) et des queues épaisses (kurtosis) des rendements réels.\n\n"
+        "**À quoi ça sert ?** À obtenir une VaR plus réaliste que la normale, qui sous-estime les krachs. "
+        "Très utile quand les rendements ne sont pas gaussiens (ce qui est presque toujours le cas).\n\n"
+        "**Comment ça se calcule ?** On ajuste le quantile de la loi normale par des termes de skewness et "
+        "de kurtosis (développement de Cornish-Fisher), puis VaR = moyenne + quantile ajusté × écart-type."
+    ),
+    "ewma_var": (
+        "**C'est quoi ?** La VaR EWMA (méthode RiskMetrics de JP Morgan) utilise une volatilité pondérée "
+        "exponentiellement, qui donne plus de poids aux jours récents.\n\n"
+        "**À quoi ça sert ?** À réagir plus vite aux changements de régime de marché qu'une volatilité "
+        "moyenne classique : quand la volatilité monte, la VaR EWMA monte tout de suite.\n\n"
+        "**Comment ça se calcule ?** La variance est mise à jour chaque jour : σ²ₜ = λ·σ²ₜ₋₁ + (1−λ)·r²ₜ₋₁ "
+        "(λ ≈ 0,94), puis VaR = quantile normal × cette volatilité récente."
+    ),
+    "component_var": (
+        "**C'est quoi ?** La décomposition de la VaR répartit le risque total entre les positions : "
+        "Marginal VaR (effet d'un petit ajout), Component VaR (contribution de chaque ligne, dont la somme "
+        "fait la VaR totale) et Incremental VaR (effet de retirer complètement une ligne).\n\n"
+        "**À quoi ça sert ?** À savoir *où* est vraiment le risque et quelles positions couper en priorité "
+        "pour le réduire — le quotidien du suivi d'un fonds.\n\n"
+        "**Comment ça se calcule ?** À partir de la contribution marginale de chaque actif à la volatilité "
+        "du portefeuille (via la matrice de covariance), multipliée par la VaR."
+    ),
     "stress_test": (
         "**C'est quoi ?** Un stress test mesure l'impact sur le portefeuille d'un scénario de marché extrême "
         "(krach 2008, COVID, choc de taux…).\n\n"

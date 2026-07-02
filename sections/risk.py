@@ -7,13 +7,23 @@ import streamlit as st
 from config import DEFAULT_MARKOWITZ_TICKERS
 from services import capm_service, risk_service
 from utils.formatters import format_pct
-from utils.plot_config import apply_theme, COLOR_NEGATIVE, COLOR_PRIMARY
+from utils.plot_config import apply_theme, COLOR_NEGATIVE
 from utils.ui import (
     kpi_row, section_header, advanced_expander, show_data_error, info_inline,
     metric_with_info, asset_multiselect,
 )
 
-_METHOD_LABELS = {"historique": "Historique", "parametrique": "Paramétrique", "monte_carlo": "Monte-Carlo"}
+_METHOD_LABELS = {
+    "historique": "Historique",
+    "parametrique": "Paramétrique",
+    "monte_carlo": "Monte-Carlo",
+    "cornish_fisher": "Cornish-Fisher (modifiée)",
+    "ewma": "EWMA (RiskMetrics)",
+}
+_METHOD_INFO = {
+    "historique": "var", "parametrique": "parametric_var", "monte_carlo": "var",
+    "cornish_fisher": "modified_var", "ewma": "ewma_var",
+}
 
 
 @st.cache_data(ttl=3600)
@@ -96,7 +106,8 @@ def render():
     with vrow[0]:
         st.markdown(f"**VaR / CVaR par méthode** — horizon {horizon} jour(s), confiance {conf_pct} %")
     with vrow[1]:
-        info_inline("parametric_var", "Méthodes de VaR")
+        info_inline("modified_var", "Méthodes de VaR")
+    st.caption(f"Distribution des rendements : skewness {result['return_skew']:+.2f} · kurtosis {result['return_kurtosis']:+.2f} (>0 = queues plus épaisses qu'une loi normale).")
     df_var = pd.DataFrame([
         {
             "Méthode": _METHOD_LABELS[m],
@@ -146,22 +157,36 @@ def render():
         with cc3:
             metric_with_info("Positions effectives", f"{conc['effective_n']:.1f}", "concentration")
 
-        # Contribution au risque
-        contrib_row = st.columns([0.9, 0.1])
-        with contrib_row[0]:
-            st.markdown("**Contribution au risque par position**")
-        with contrib_row[1]:
-            info_inline("risk_contribution", "Contribution au risque")
-        contrib = result["risk_contributions_pct"]
-        order = np.argsort(contrib)[::-1]
+        # Décomposition de la VaR (Component / Marginal / Incremental)
+        dec_row = st.columns([0.9, 0.1])
+        with dec_row[0]:
+            st.markdown("**Décomposition de la VaR (Component / Marginal / Incremental)**")
+        with dec_row[1]:
+            info_inline("component_var", "Décomposition de la VaR")
+        vd = result["var_decomposition"]
+        tickers_arr = np.array(result["tickers"])
+        comp_eur = vd["component_var_eur"]
+        order = np.argsort(comp_eur)  # la plus négative (plus risquée) en premier
         fig_c = go.Figure(go.Bar(
-            x=np.array(result["tickers"])[order], y=contrib[order], marker=dict(color=COLOR_PRIMARY),
-            text=[f"{c:.0f} %" for c in contrib[order]], textposition="outside",
-            hovertemplate="%{x} : %{y:.1f} % du risque<extra></extra>",
+            x=tickers_arr[order], y=comp_eur[order], marker=dict(color=COLOR_NEGATIVE),
+            text=[_eur(v) for v in comp_eur[order]], textposition="outside",
+            hovertemplate="%{x} : %{text}<extra></extra>",
         ))
-        fig_c.update_layout(title="Part de chaque ligne dans le risque total", xaxis_title="", yaxis_title="% du risque")
+        fig_c.update_layout(title="Component VaR par position (Σ = VaR du fonds)", xaxis_title="", yaxis_title="Component VaR (€)")
         apply_theme(fig_c, height=320, legend=False)
         st.plotly_chart(fig_c, use_container_width=True)
+        df_dec = pd.DataFrame({
+            "Actif": tickers_arr,
+            "Component VaR (€)": [_eur(v) for v in comp_eur],
+            "% du risque": [f"{p:.0f} %" for p in vd["component_var_pct"]],
+            "Incremental VaR (€)": [_eur(v) for v in vd["incremental_var_eur"]],
+        })
+        st.dataframe(df_dec, use_container_width=True, hide_index=True)
+        worst = tickers_arr[int(np.argmin(vd["marginal_var"]))]
+        st.caption(
+            f"**Marginal VaR** la plus élevée : **{worst}** (la ligne qui accroît le plus la VaR à la marge). "
+            "**Component VaR** : somme = VaR du fonds. **Incremental VaR** < 0 = la ligne ajoute du risque."
+        )
 
         # Backtesting VaR (Kupiec)
         k = result["kupiec"]

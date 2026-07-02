@@ -1,5 +1,11 @@
 # Changelog — FinLab
 
+## 2026-07-02 — Approfondissement VaR (5 méthodes + décomposition)
+- `services/risk_service.py` : ajout `var_cornish_fisher` (VaR modifiée, ajustée skewness/kurtosis) et `var_ewma` (RiskMetrics, λ=0.94, pondère la vol récente) → **5 méthodes de VaR**. Ajout `ewma_volatility` et `var_decomposition` (Marginal / Component / Incremental VaR, Σ Component = VaR du fonds). `compute_risk` expose `return_skew`, `return_kurtosis`, `var_decomposition`.
+- `sections/risk.py` : table VaR passe à 5 lignes + caption skewness/kurtosis ; bloc « Avancé » remplace la contribution simple par la **Décomposition de la VaR** (barre Component VaR €, table Component/%/Incremental, Marginal VaR max mise en avant).
+- Glossaire : `modified_var`, `ewma_var`, `component_var`.
+- Tests : +4 (Cornish-Fisher normal/fat-tails, EWMA réactivité, décomposition Σ=total) → **167 verts**. Aucune dépendance pip.
+
 ## 2026-07-02 — Onglet Risque (alignement poste RMM Risques d'Investissement)
 - `services/risk_service.py` (pur, testé) : VaR 3 méthodes (historique, paramétrique, Monte-Carlo) + CVaR, mise à l'horizon (√t), stress tests (choc marché × bêta + pire jour/semaine observés), concentration (HHI, positions effectives, top-3), contribution au risque par ligne, backtesting VaR (test de Kupiec).
 - `sections/risk.py` : 7ᵉ onglet. KPI (VaR/CVaR €, vol, positions effectives) → table VaR 3 méthodes → héros stress tests (€) → Avancé (concentration, contribution, Kupiec). Encours/confiance/horizon/benchmark paramétrables.
