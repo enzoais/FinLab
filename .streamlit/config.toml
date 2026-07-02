@@ -1,3 +1,12 @@
-# Reload app when a Python file is saved (see changes without restarting Streamlit)
+# Thème clair & pro (fond blanc, accent bleu sobre, texte ardoise)
+[theme]
+base = "light"
+primaryColor = "#2563EB"            # bleu sobre (accent)
+backgroundColor = "#FFFFFF"         # fond blanc
+secondaryBackgroundColor = "#F5F7FA" # gris très clair (cartes, expanders)
+textColor = "#1E293B"               # ardoise (slate-800)
+font = "sans-serif"
+
 [server]
+# Recharge l'app quand un fichier Python est sauvegardé (dev)
 runOnSave = true
