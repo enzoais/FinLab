@@ -17,12 +17,8 @@ from config import (
     DEFAULT_MC_VOLATILITY,
 )
 from services import capm_service, monte_carlo_service
+from utils.formatters import format_pct
 from utils.plot_config import HOVERLABEL
-
-
-def _format_pct(value: float, decimals: int = 2) -> str:
-    """Format as percentage (e.g. 0.0523 -> 5.23%)."""
-    return f"{value * 100:.{decimals}f}%"
 
 
 @st.cache_data(ttl=3600)
@@ -120,7 +116,7 @@ def render():
                 if mu_est is not None and sigma_est is not None:
                     mu_input = mu_est
                     sigma_input = sigma_est
-                    st.caption(f"μ = {_format_pct(mu_input)}, σ = {_format_pct(sigma_input)}")
+                    st.caption(f"μ = {format_pct(mu_input)}, σ = {format_pct(sigma_input)}")
                 else:
                     st.warning("Could not estimate from ticker; using manual defaults.")
                     mu_input = float(DEFAULT_MC_DRIFT)
@@ -254,8 +250,8 @@ def render():
     # ----- 3. Context block -----
     context_parts = [
         f"**S₀** = {initial_wealth:,.0f}",
-        f"**μ** = {_format_pct(mu_input)}",
-        f"**σ** = {_format_pct(sigma_input)}",
+        f"**μ** = {format_pct(mu_input)}",
+        f"**σ** = {format_pct(sigma_input)}",
         f"**T** = {horizon_years} years",
         f"**Paths** = {n_paths}",
     ]
@@ -304,7 +300,7 @@ def render():
     with c4:
         st.metric(
             f"VaR {int(var_confidence*100)}% (%)",
-            _format_pct(vc["var_pct"]),
+            format_pct(vc["var_pct"]),
             help="Purpose: VaR as % of initial wealth. Negative = loss in the worst (1-conf)% of paths.",
         )
     with c5:
@@ -327,13 +323,13 @@ def render():
     with c7:
         st.metric(
             "CVaR (%)",
-            _format_pct(vc["cvar_pct"]),
+            format_pct(vc["cvar_pct"]),
             help="CVaR as % of initial wealth.",
         )
     with c8:
         st.metric(
             "Median max drawdown",
-            _format_pct(dd["p50"]),
+            format_pct(dd["p50"]),
             help="Purpose: typical worst peak-to-trough decline along a path. E.g. -30% means half of paths had a drawdown of at least 30%.",
         )
 
@@ -356,7 +352,7 @@ def render():
         st.write("Min:", f"{ts['min']:,.0f}", "| Max:", f"{ts['max']:,.0f}")
         st.write("Std:", f"{ts['std']:,.0f}", "| P5:", f"{ts['p5']:,.0f}", "| P95:", f"{ts['p95']:,.0f}")
     with st.expander("Max drawdown distribution", expanded=False):
-        st.write("Mean:", _format_pct(dd["mean"]), "| P5:", _format_pct(dd["p5"]), "| P95:", _format_pct(dd["p95"]))
+        st.write("Mean:", format_pct(dd["mean"]), "| P5:", format_pct(dd["p5"]), "| P95:", format_pct(dd["p95"]))
     st.markdown("")
     st.divider()
 

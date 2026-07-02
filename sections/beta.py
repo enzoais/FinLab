@@ -7,19 +7,8 @@ import plotly.graph_objects as go
 
 from config import DEFAULT_ASSET_TICKER, DEFAULT_RISK_FREE_RATE
 from services import capm_service
+from utils.formatters import format_pct, format_pvalue
 from utils.plot_config import HOVERLABEL
-
-
-def _format_pct(value: float, decimals: int = 2) -> str:
-    """Format as percentage (e.g. 0.0523 -> 5.23%)."""
-    return f"{value * 100:.{decimals}f}%"
-
-
-def _format_pvalue(p: float) -> str:
-    """Format p-value (3 decimals or scientific if very small)."""
-    if p < 0.0001:
-        return f"{p:.2e}"
-    return f"{p:.3f}"
 
 
 @st.cache_data(ttl=3600)
@@ -181,7 +170,7 @@ def render():
     with c4:
         st.metric(
             "Cost of equity (Kₑ)",
-            _format_pct(ke),
+            format_pct(ke),
             help="Purpose: the minimum return investors expect from this stock given its risk. Companies use it to decide if a project is worth it (discount future cash flows). Investors use it to check if the stock is cheap or expensive vs that required return.",
         )
     with c5:
@@ -214,7 +203,7 @@ def render():
         t_stat = reg.get("t_stat_beta")
         st.write(f"**t-stat (Beta):** {t_stat if t_stat is not None else '—'}")
         p_val_beta = reg.get("p_value_beta")
-        st.write(f"**p-value (Beta):** {_format_pvalue(p_val_beta) if p_val_beta is not None else '—'}")
+        st.write(f"**p-value (Beta):** {format_pvalue(p_val_beta) if p_val_beta is not None else '—'}")
         if reg.get("ci_low") is not None and reg.get("ci_high") is not None:
             st.write(f"**95% CI for β:** [{reg['ci_low']:.3f}, {reg['ci_high']:.3f}]")
         st.write(f"**Observations:** {reg['n_obs']}")

@@ -197,8 +197,14 @@ def estimate_mu_sigma_from_ticker(
     end_date,
 ) -> tuple[float | None, float | None]:
     """
-    Estimate annualized drift (mu) and volatility (sigma) from historical prices.
+    Estimate annualized arithmetic drift (mu) and volatility (sigma) from historical prices.
     Uses log returns and annualization factor 252.
+
+    Convention : dans le MBG dS/S = mu·dt + sigma·dW, `mu` est le drift *arithmétique*.
+    Or la moyenne des log-rendements estime (mu − 0.5·sigma²) (le drift *log*), et
+    `simulate_gbm_paths` retranche déjà 0.5·sigma². On reconvertit donc en drift
+    arithmétique : mu = moyenne_log·252 + 0.5·sigma², sinon les trajectoires simulées
+    seraient biaisées à la baisse de 0.5·sigma² par an.
     Returns (mu, sigma) or (None, None) on failure.
     """
     if not HAS_YFINANCE or not ticker or not ticker.strip():
@@ -226,8 +232,10 @@ def estimate_mu_sigma_from_ticker(
             return (None, None)
         mu_daily = float(np.mean(log_ret))
         sigma_daily = float(np.std(log_ret))
-        mu_annual = mu_daily * ANNUALIZE
         sigma_annual = sigma_daily * np.sqrt(ANNUALIZE)
+        # Drift log annualisé, reconverti en drift arithmétique (voir docstring)
+        mu_log_annual = mu_daily * ANNUALIZE
+        mu_annual = mu_log_annual + 0.5 * sigma_annual ** 2
         return (mu_annual, sigma_annual)
     except Exception:
         return (None, None)

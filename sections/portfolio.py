@@ -7,12 +7,8 @@ import streamlit as st
 
 from config import DEFAULT_MARKOWITZ_TICKERS, DEFAULT_RISK_FREE_RATE
 from services import capm_service, markowitz_service
+from utils.formatters import format_pct
 from utils.plot_config import HOVERLABEL
-
-
-def _format_pct(value: float, decimals: int = 2) -> str:
-    """Format as percentage (e.g. 0.0523 -> 5.23%)."""
-    return f"{value * 100:.{decimals}f}%"
 
 
 @st.cache_data(ttl=3600)
@@ -242,13 +238,13 @@ def render():
     with c2:
         st.metric(
             "Portfolio volatility",
-            _format_pct(result["volatility"]),
+            format_pct(result["volatility"]),
             help="Purpose: annualized risk (standard deviation of returns). Lower = less volatility. Use it to gauge how much the portfolio value may swing.",
         )
     with c3:
         st.metric(
             "Expected return",
-            _format_pct(result["expected_return"]),
+            format_pct(result["expected_return"]),
             help="Purpose: annualized mean return of the portfolio. Use it to set return expectations and compare with the risk-free rate.",
         )
     with c4:
@@ -287,14 +283,14 @@ def render():
             """)
         b1, b2, b3, b4, b5 = st.columns(5)
         with b1:
-            st.metric("Benchmark return", _format_pct(result["benchmark_return_annual"]), help="Annualized return of the selected benchmark over the same period.")
+            st.metric("Benchmark return", format_pct(result["benchmark_return_annual"]), help="Annualized return of the selected benchmark over the same period.")
         with b2:
-            st.metric("Benchmark volatility", _format_pct(result["benchmark_vol_annual"]), help="Annualized volatility of the benchmark.")
+            st.metric("Benchmark volatility", format_pct(result["benchmark_vol_annual"]), help="Annualized volatility of the benchmark.")
         with b3:
             alpha = result["alpha_vs_benchmark"]
-            st.metric("Alpha", _format_pct(alpha), help="Excess return of the portfolio over the benchmark. Positive = portfolio beat the benchmark.")
+            st.metric("Alpha", format_pct(alpha), help="Excess return of the portfolio over the benchmark. Positive = portfolio beat the benchmark.")
         with b4:
-            st.metric("Tracking error", _format_pct(result["tracking_error_annual"]), help="Annualized volatility of (portfolio return − benchmark return). Lower = portfolio tracks the benchmark more closely.")
+            st.metric("Tracking error", format_pct(result["tracking_error_annual"]), help="Annualized volatility of (portfolio return − benchmark return). Lower = portfolio tracks the benchmark more closely.")
         with b5:
             st.metric("Information ratio", f"{result['information_ratio']:.3f}", help="Alpha divided by tracking error. Higher = more excess return per unit of active risk.")
         st.markdown("")

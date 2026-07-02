@@ -1,0 +1,3 @@
+# FinLab — dev dependencies (tests). Non installées par Streamlit Cloud.
+-r requirements.txt
+pytest>=8.0.0

@@ -15,12 +15,8 @@ from config import (
     DEFAULT_RISK_FREE_RATE,
 )
 from services import black_scholes_service, capm_service
+from utils.formatters import format_pct
 from utils.plot_config import HOVERLABEL
-
-
-def _format_pct(value: float, decimals: int = 2) -> str:
-    """Format as percentage (e.g. 0.0523 -> 5.23%)."""
-    return f"{value * 100:.{decimals}f}%"
 
 
 def _format_greek(value: float, decimals: int = 4) -> str:
@@ -312,7 +308,7 @@ def render():
     if result.get("implied_vol") is not None:
         cols[idx].metric(
             "Implied volatility",
-            _format_pct(result["implied_vol"]),
+            format_pct(result["implied_vol"]),
             help="Purpose: the volatility that makes the model price equal to the market price. Higher IV = market expects more uncertainty. Use it to compare across strikes and maturities.",
         )
         idx += 1

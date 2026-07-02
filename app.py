@@ -1,16 +1,9 @@
 """
 FinLab — tab-based finance app.
 """
-import importlib
 import streamlit as st
 
 from sections import beta, portfolio, bonds, options, simulation
-
-importlib.reload(beta)
-importlib.reload(portfolio)
-importlib.reload(bonds)
-importlib.reload(options)
-importlib.reload(simulation)
 
 st.set_page_config(
     page_title="FinLab",

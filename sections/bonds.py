@@ -15,12 +15,8 @@ from config import (
     DEFAULT_RISK_FREE_RATE,
 )
 from services import fixed_income_service
+from utils.formatters import format_pct
 from utils.plot_config import HOVERLABEL
-
-
-def _format_pct(value: float, decimals: int = 2) -> str:
-    """Format as percentage (e.g. 0.0523 -> 5.23%)."""
-    return f"{value * 100:.{decimals}f}%"
 
 
 @st.cache_data(ttl=3600)
@@ -294,7 +290,7 @@ def render():
     with c2:
         st.metric(
             "Yield to maturity (YTM)",
-            _format_pct(ytm),
+            format_pct(ytm),
             help="Purpose: the annual return you get if you hold the bond until maturity. It moves inversely with price. Use it to compare bonds or to discount cash flows.",
         )
     with c3:
