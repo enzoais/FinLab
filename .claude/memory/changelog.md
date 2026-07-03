@@ -1,5 +1,11 @@
 # Changelog — FinLab
 
+## 2026-07-03 — Onglet Options retiré, Greeks déplacés dans Risque
+- `app.py` : onglet **Options** retiré des TABS (hors CV / hors offre) → **6 onglets**.
+- `sections/risk.py` : ajout `_render_greeks_block` (+ `_fmt_greek`) dans l'expander « Avancé » : mini-calculateur d'option autonome (Call/Put, spot, strike, T, σ, r) → prix + Δ/Γ/Vega/Θ/Rho, recadré « sensibilités de risque des dérivés détenus par le fonds ». Clés `risk_greek_*`.
+- `services/black_scholes_service.py` + ses tests **conservés intacts** ; `sections/options.py` **supprimé** (validé par l'utilisateur).
+- Tests : **167 verts** (inchangé). Aucune dépendance pip.
+
 ## 2026-07-02 — Approfondissement VaR (5 méthodes + décomposition)
 - `services/risk_service.py` : ajout `var_cornish_fisher` (VaR modifiée, ajustée skewness/kurtosis) et `var_ewma` (RiskMetrics, λ=0.94, pondère la vol récente) → **5 méthodes de VaR**. Ajout `ewma_volatility` et `var_decomposition` (Marginal / Component / Incremental VaR, Σ Component = VaR du fonds). `compute_risk` expose `return_skew`, `return_kurtosis`, `var_decomposition`.
 - `sections/risk.py` : table VaR passe à 5 lignes + caption skewness/kurtosis ; bloc « Avancé » remplace la contribution simple par la **Décomposition de la VaR** (barre Component VaR €, table Component/%/Incremental, Marginal VaR max mise en avant).

@@ -3,7 +3,7 @@ FinLab — labo de finance quantitative (application à onglets).
 """
 import streamlit as st
 
-from sections import beta, portfolio, bonds, options, simulation, backtest, risk
+from sections import beta, portfolio, bonds, simulation, backtest, risk
 
 st.set_page_config(
     page_title="FinLab",
@@ -13,13 +13,12 @@ st.set_page_config(
 )
 
 st.title("FinLab")
-st.caption("Labo de finance quantitative — Bêta · Portefeuille · Obligations · Options · Simulation · Backtest · Risque")
+st.caption("Labo de finance quantitative — Bêta · Portefeuille · Obligations · Simulation · Backtest · Risque")
 
 TABS = [
     ("Bêta (CAPM)", beta),
     ("Portefeuille", portfolio),
     ("Obligations", bonds),
-    ("Options", options),
     ("Simulation", simulation),
     ("Backtest", backtest),
     ("Risque", risk),

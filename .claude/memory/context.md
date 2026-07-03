@@ -1,13 +1,16 @@
 # Contexte — FinLab
 
-## État actuel (2026-07-02)
-Refonte « entretien quant » livrée. App claire & pro, **7 onglets** (Bêta, Portefeuille, Obligations,
-Options, Simulation, Backtest, **Risque**), déployée sur `main` → Streamlit Cloud.
+## État actuel (2026-07-03)
+Refonte « entretien quant » livrée. App claire & pro, **6 onglets** (Bêta, Portefeuille, Obligations,
+Simulation, Backtest, **Risque**), déployée sur `main` → Streamlit Cloud.
 Tests : **167 verts**. Aucune dépendance pip ajoutée.
 Cible entretien : alternance **Risques d'Investissement** (banque privée RMM / Rothschild & Co) — l'onglet
-Risque (VaR **5 méthodes** + décomposition Marginal/Component/Incremental, stress tests, concentration, Kupiec)
-couvre le cœur du poste ; recherche d'actions filtrable (catalogue Nom→ticker) ; DV01/CS01 pour la partie
-fixed income du CV (HSBC).
+Risque (VaR **5 méthodes** + décomposition Marginal/Component/Incremental, stress tests, concentration, Kupiec,
+**Greeks des dérivés**) couvre le cœur du poste ; recherche d'actions filtrable (catalogue Nom→ticker) ;
+DV01/CS01 pour la partie fixed income du CV (HSBC).
+**Onglet Options retiré** (hors CV / hors offre) : les Greeks ont été déplacés dans Risque > Avancé
+(mini-calculateur `_render_greeks_block`, recadré « risque des dérivés »). `services/black_scholes_service.py`
++ ses tests conservés intacts ; `sections/options.py` supprimé.
 
 ## Ce qui vient d'être fait (session refonte)
 - **Design system clair & pro** : `.streamlit/config.toml` (fond blanc, accent bleu #2563EB, texte ardoise),

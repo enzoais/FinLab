@@ -4,8 +4,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from config import DEFAULT_MARKOWITZ_TICKERS
-from services import capm_service, risk_service
+from config import (
+    DEFAULT_MARKOWITZ_TICKERS, DEFAULT_BS_SPOT, DEFAULT_BS_STRIKE,
+    DEFAULT_BS_TIME_TO_EXPIRY, DEFAULT_BS_VOLATILITY, DEFAULT_RISK_FREE_RATE,
+)
+from services import black_scholes_service, capm_service, risk_service
 from utils.formatters import format_pct
 from utils.plot_config import apply_theme, COLOR_NEGATIVE
 from utils.ui import (
@@ -38,6 +41,63 @@ def _load_risk(tickers, weights, start_str, end_str, aum, confidence, horizon, b
 
 def _eur(x: float) -> str:
     return f"{x:,.0f} €".replace(",", " ")
+
+
+def _fmt_greek(value, decimals=4):
+    """Formate un Greek : notation scientifique si très petit, sinon décimales fixes."""
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return "—"
+    if abs(value) < 1e-6 and value != 0:
+        return f"{value:.2e}"
+    return f"{value:.{decimals}f}"
+
+
+def _render_greeks_block():
+    """Mini-calculateur de sensibilités optionnelles (Greeks) : risque des dérivés détenus par le fonds."""
+    row = st.columns([0.9, 0.1])
+    with row[0]:
+        st.markdown("**Sensibilités optionnelles (Greeks)** — risque des dérivés détenus par le fonds")
+    with row[1]:
+        info_inline("black_scholes", "Greeks")
+    st.caption(
+        "Si le fonds détient des options (couverture, produits structurés), les Greeks mesurent son "
+        "exposition au sous-jacent (Δ), à la convexité (Γ), à la volatilité (Vega) et au temps (Θ)."
+    )
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        option_type = st.radio("Type", ["Call", "Put"], index=0, horizontal=True, key="risk_greek_type")
+        spot = st.number_input("Spot (S)", 0.01, 1e6, float(DEFAULT_BS_SPOT), 1.0, format="%.2f", key="risk_greek_spot")
+    with c2:
+        strike = st.number_input("Strike (K)", 0.01, 1e6, float(DEFAULT_BS_STRIKE), 1.0, format="%.2f", key="risk_greek_strike")
+        time_to_expiry = st.number_input("Échéance (années)", 1e-4, 50.0, float(DEFAULT_BS_TIME_TO_EXPIRY), 0.1, format="%.2f", key="risk_greek_T")
+    with c3:
+        vol = st.number_input("Volatilité (σ %)", 0.1, 200.0, float(DEFAULT_BS_VOLATILITY * 100), 0.5, format="%.2f", key="risk_greek_sigma") / 100.0
+        rf = st.number_input("Taux sans risque (r)", 0.0, 0.30, float(DEFAULT_RISK_FREE_RATE), 0.005, format="%.3f", key="risk_greek_rf")
+
+    option_key = "call" if option_type == "Call" else "put"
+    result = black_scholes_service.run_bs_analysis(
+        spot=spot, strike=strike, time_to_expiry=time_to_expiry, risk_free_rate=rf,
+        volatility=vol, market_price=None, option_type_for_iv=option_key,
+    )
+    if not result["success"]:
+        show_data_error(result.get("error"))
+        return
+
+    price = result["call_price"] if option_key == "call" else result["put_price"]
+    delta_val = result["delta_call"] if option_key == "call" else result["delta_put"]
+    theta_val = result["theta_call"] if option_key == "call" else result["theta_put"]
+    rho_val = result["rho_call"] if option_key == "call" else result["rho_put"]
+    g1, g2, g3 = st.columns(3)
+    with g1:
+        metric_with_info(f"Prix {option_type}", f"{price:.2f}", option_key)
+        metric_with_info("Theta (Θ, /jour)", f"{theta_val:.4f}", "theta")
+    with g2:
+        metric_with_info("Delta (Δ)", f"{delta_val:.3f}", "delta")
+        metric_with_info("Vega (/1 % vol)", _fmt_greek(result["vega"]), "vega")
+    with g3:
+        metric_with_info("Gamma (Γ)", _fmt_greek(result["gamma"]), "gamma")
+        metric_with_info("Rho (/1 % taux)", f"{rho_val:.4f}", "rho")
+    st.caption("Black-Scholes européen, sans dividendes, σ constante. Θ par jour · Vega par 1 % de vol · Rho par 1 % de taux.")
 
 
 def render():
@@ -206,3 +266,7 @@ def render():
             st.caption(f"✅ Modèle validé : {k['observed']} dépassements pour {k['expected']:.1f} attendus (ratio {k['ratio']:.2f}×), écart non significatif.")
         else:
             st.caption(f"⚠️ Modèle rejeté : {k['observed']} dépassements pour {k['expected']:.1f} attendus (ratio {k['ratio']:.2f}×) — VaR probablement sous-estimée.")
+
+        # Sensibilités optionnelles (Greeks) — risque des dérivés
+        st.divider()
+        _render_greeks_block()
